@@ -214,8 +214,8 @@ class CustomCSVImport(Job):
                     validation_failed = True
                     break
                 state, created = Location.objects.get_or_create(name=state_name, location_type=type_state, status=active_status)
-                city, created = Location.objects.get_or_create(name=obj["city"], location_type=type_city, status=active_status)
-                building, created = Location.objects.get_or_create(name=obj["name"], location_type=building_type, status=active_status)
+                city, created = Location.objects.get_or_create(name=obj["city"], location_type=type_city, status=active_status, parent=state)
+                building, created = Location.objects.get_or_create(name=obj["name"], location_type=building_type, status=active_status, parent=city)
                 self.logger.info(f"Processed {state} - {city} - {building}")
 
             # if roll_back_if_error:
