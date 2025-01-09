@@ -13,7 +13,64 @@ from nautobot.core.api.parsers import NautobotCSVParser
 from nautobot.core.api.utils import get_serializer_for_model
 from nautobot.core.exceptions import AbortTransaction
 from nautobot.extras.jobs import BooleanVar, ChoiceVar, FileVar, Job, ObjectVar, RunJobTaskFailed, StringVar, TextVar
-from nautobot.dcim.models.locations import Location
+from nautobot.extras.models import Status
+from nautobot.dcim.models.locations import Location, LocationType
+
+
+us_states = {
+    "AL": "Alabama",
+    "AK": "Alaska",
+    "AZ": "Arizona",
+    "AR": "Arkansas",
+    "CA": "California",
+    "CO": "Colorado",
+    "CT": "Connecticut",
+    "DE": "Delaware",
+    "FL": "Florida",
+    "GA": "Georgia",
+    "HI": "Hawaii",
+    "ID": "Idaho",
+    "IL": "Illinois",
+    "IN": "Indiana",
+    "IA": "Iowa",
+    "KS": "Kansas",
+    "KY": "Kentucky",
+    "LA": "Louisiana",
+    "ME": "Maine",
+    "MD": "Maryland",
+    "MA": "Massachusetts",
+    "MI": "Michigan",
+    "MN": "Minnesota",
+    "MS": "Mississippi",
+    "MO": "Missouri",
+    "MT": "Montana",
+    "NE": "Nebraska",
+    "NV": "Nevada",
+    "NH": "New Hampshire",
+    "NJ": "New Jersey",
+    "NM": "New Mexico",
+    "NY": "New York",
+    "NC": "North Carolina",
+    "ND": "North Dakota",
+    "OH": "Ohio",
+    "OK": "Oklahoma",
+    "OR": "Oregon",
+    "PA": "Pennsylvania",
+    "RI": "Rhode Island",
+    "SC": "South Carolina",
+    "SD": "South Dakota",
+    "TN": "Tennessee",
+    "TX": "Texas",
+    "UT": "Utah",
+    "VT": "Vermont",
+    "VA": "Virginia",
+    "WA": "Washington",
+    "WV": "West Virginia",
+    "WI": "Wisconsin",
+    "WY": "Wyoming",
+    "DC": "District of Columbia"
+}
+
 
 name = "Data Import"  # optional, but recommended to define a grouping name
 
@@ -132,8 +189,26 @@ class CustomCSVImport(Job):
                 parser_context={"request": None, "serializer_class": CustomLocationSerializer},
             )
             self.logger.info("Processing %d rows of data", len(data))
-            self.logger.info("Processed data", data)
+            # self.logger.info("Processed data", data)
+
+
+            type_state = LocationType.objects.get(name="State")
+            type_city = LocationType.objects.get(name="City")
+            type_branch = LocationType.objects.get(name="Branch")
+            type_data_center = LocationType.objects.get(name="Data Center")
+            active_status = Status.objects.get(name="Active")
+
             validation_failed = False
+            for obj in data:
+                state_name = obj["state"]
+                if state_name in us_states:
+                    state_name = us_states[state_name]
+                if state_name not in us_states.values():
+                    validation_failed = True
+                    break
+                state, created = Location.objects.get_or_create(name=obj["state"], type=type_state, status=active_status)
+                city, created = Location.objects.get_or_create(name=obj["city"], type=type_city, status=active_status)
+
             # if roll_back_if_error:
             #     new_objs, validation_failed = self._perform_atomic_operation(data, serializer_class, queryset)
             # else:
