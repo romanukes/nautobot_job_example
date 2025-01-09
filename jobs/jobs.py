@@ -6,7 +6,7 @@ from io import BytesIO
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from rest_framework import exceptions as drf_exceptions
+from rest_framework import exceptions as drf_exceptions, serializers
 
 from nautobot.core.api.exceptions import SerializerNotFound
 from nautobot.core.api.parsers import NautobotCSVParser
@@ -16,6 +16,14 @@ from nautobot.extras.jobs import BooleanVar, ChoiceVar, FileVar, Job, ObjectVar,
 from nautobot.dcim.models.locations import Location
 
 name = "Data Import"  # optional, but recommended to define a grouping name
+
+
+class CustomLocationSerializer(
+    serializers.Serializer,
+):
+    name = serializers.CharField()
+    city = serializers.CharField()
+    state = serializers.CharField()
 
 
 class CustomCSVImport(Job):
@@ -38,7 +46,7 @@ class CustomCSVImport(Job):
     template_name = "system_jobs/import_objects.html"
 
     class Meta:
-        name = "Import Objects"
+        name = "Custom CSV Import"
         description = "Import objects from CSV-formatted data."
         has_sensitive_variables = False
         # Importing large files may take substantial processing time
@@ -120,7 +128,8 @@ class CustomCSVImport(Job):
         try:
             data = NautobotCSVParser().parse(
                 stream=csv_bytes,
-                parser_context={"request": None, "serializer_class": serializer_class},
+                # parser_context={"request": None, "serializer_class": serializer_class},
+                parser_context={"request": None, "serializer_class": CustomLocationSerializer},
             )
             self.logger.info("Processing %d rows of data", len(data))
             self.logger.info("Processed data", data)
