@@ -206,8 +206,17 @@ class CustomCSVImport(Job):
                 if state_name not in us_states.values():
                     validation_failed = True
                     break
-                state, created = Location.objects.get_or_create(name=obj["state"], type=type_state, status=active_status)
-                city, created = Location.objects.get_or_create(name=obj["city"], type=type_city, status=active_status)
+                if "-DC" in obj["name"]:
+                    building_type = type_data_center
+                elif "-BR" in obj["name"]:
+                    building_type = type_branch
+                else:
+                    validation_failed = True
+                    break
+                state, created = Location.objects.get_or_create(name=state_name, location_type=type_state, status=active_status)
+                city, created = Location.objects.get_or_create(name=obj["city"], location_type=type_city, status=active_status)
+                building, created = Location.objects.get_or_create(name=obj["name"], location_type=building_type, status=active_status)
+                self.logger.info(f"Processed {state} - {city} - {building}")
 
             # if roll_back_if_error:
             #     new_objs, validation_failed = self._perform_atomic_operation(data, serializer_class, queryset)
